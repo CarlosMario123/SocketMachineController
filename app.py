@@ -2,17 +2,27 @@ import logging
 import socketio
 import subprocess
 import os
+import random
+import string
 
+def generar_clave():
+    longitud = 10
+    caracteres = string.ascii_letters + string.digits  # letras y dígitos
+    clave = ''.join(random.choice(caracteres) for _ in range(longitud))
+    return clave
+
+clave = generar_clave()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 sio = socketio.Client()
 
-sio.connect("https://msfr5dmf-8000.usw3.devtunnels.ms/")
 
-@sio.event
+
+@sio.on("connect")
 def connect():
     print('Conectado al servidor')
+    sio.emit("linea",clave)
 
 def execute_command(command):
     try:
@@ -38,9 +48,13 @@ def execute_command(command):
         logger.error(f"Error inesperado: {e}")
         sio.emit("recibirInfo", f"Error inesperado: {e}")
 
-@sio.on('controlar')
+@sio.on(f'controlar{clave}')
 def on_message(data):
+    print(data)
     execute_command(data)
 
+
+sio.connect("http://127.0.0.1:8000")
+
 while True:
-    sio
+    sio.sleep(1)
